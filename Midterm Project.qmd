@@ -1,0 +1,163 @@
+---
+title: "midterm project"
+format: html
+editor: visual
+embed-resources: true
+---
+The dataset - Tobacco use in Alabama and Alaska from 2011 to 2019
+Reference website:
+https://data.cdc.gov/Survey-Data/Behavioral-Risk-Factor-Data-Tobacco-Use-2011-to-pr/wsas-xwh5/about_data
+
+```{r}
+library(dplyr)
+library(data.table) 
+library(tidyverse)
+Tob.Use<- data.table::fread("/Users/kristydeng/Downloads/wsas-xwh5.csv")
+Tob.Use <- Tob.Use %>%
+  rename(
+    state = locationabbr,
+    City = locationdesc
+  )
+Tob.Use <- Tob.Use %>%
+  filter(year %in% c(2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019))
+print(Tob.Use)
+```
+
+1.The Number of people of "Cessation(Adults)""Cigarette Use(Adults)""Smokeless Tobacoo Use (Adults)"and "E-Cigarette Use (Adults)"in Alabama from 2011 to 2019 seperatley.
+```{r}
+library(dplyr)
+alabama_counts <- Tob.Use %>%
+  filter(City == "Alabama") %>%  
+  group_by(year, topicdesc) %>%  
+  summarise(count = n())
+alabama_counts
+```
+2.The Number of people of "Cessation(Adults)""Cigarette Use(Adults)""Smokeless Tobacoo Use (Adults)"and "E-Cigarette Use (Adults)"in Alaska from 2011 to 2019 seperatley.
+```{r}
+library(dplyr)
+alaska_counts <- Tob.Use %>%
+  filter(City == "Alaska") %>%  
+  group_by(year, topicdesc,) %>%  
+  summarise(count = n())
+alaska_counts
+```
+#Based on the second and third questions we know that Alaska began counting cigarette use in 2017. So we need to compare data between 2017 and 2019.
+
+3.How has tobacco use among adults in Alabama and Alaska changed over time from 2017 to 2019?
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+# Assuming your dataset is loaded into a data frame called 'Tob.Use'
+# Filter the data for Alabama and Alaska and for years 2011 to 2019
+filtered_data <- Tob.Use %>%
+  filter(state %in% c("AL", "AK"), year >= 2017, year <= 2019) %>%
+  filter(topicdesc %in% c("Smokeless Tobacco Use (Adults)", 
+                          "E-Cigarette Use (Adults)", 
+                          "Cigarette Use (Adults)", 
+                          "Cessation (Adults)"))
+# Create a bar chart showing trends in tobacco use over time
+ggplot(filtered_data, aes(x = as.factor(year), y = data_value, fill = state)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ topicdesc, scales = "free_y") +
+  labs(
+    title = "Tobacco Use and Cessation Trends in Alabama and Alaska (2017-2019)",
+    x = "Year",
+    y = "Percentage of Users",
+    fill = "State"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 55, hjust = 1))  
+```
+4.How does the usage of different tobacco products vary between Alabama and Alaska?
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+# Assuming your dataset is loaded into a data frame called 'Tob.Use'
+# Filter the data for Alabama and Alaska and for years 2017 to 2019
+filtered_data <- Tob.Use %>%
+  filter(state %in% c("AL", "AK"), year >= 2017, year <= 2019) %>%
+  filter(topicdesc %in% c("Smokeless Tobacco Use (Adults)", 
+                          "E-Cigarette Use (Adults)", 
+                          "Cigarette Use (Adults)", 
+                          "Cessation (Adults)"))
+# Create a stacked bar chart to compare tobacco use by type
+ggplot(filtered_data, aes(x = as.factor(year), y = data_value, fill = topicdesc)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~ state) +  # Separate charts for Alabama and Alaska
+  labs(
+    title = "Comparison of Tobacco Use by Product Type in Alabama and Alaska (2017-2019)",
+    x = "Year",
+    y = "Percentage of Users",
+    fill = "Tobacco Product"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 55, hjust = 1))  # Rotate the x-axis labels for better readability
+```
+5.How does tobacco use vary between males and females in Alabama and Alaska?
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+# Assuming your dataset is loaded into a data frame called 'Tob.Use'
+# Filter data for Alabama and Alaska, focusing on gender (excluding "overall")
+filtered_data_gender <- Tob.Use %>%
+  filter(state %in% c("AL", "AK"), year >= 2017, year <= 2019) %>%
+  filter(topicdesc %in% c("Smokeless Tobacco Use (Adults)", 
+                          "E-Cigarette Use (Adults)", 
+                          "Cigarette Use (Adults)", 
+                          "Cessation (Adults)")) %>%
+  filter(gender %in% c("Female", "Male"))  # Exclude "overall"
+# Create a grouped bar chart to compare tobacco use by gender
+ggplot(filtered_data_gender, aes(x = as.factor(year), y = data_value, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_grid(topicdesc ~ state, scales = "free_y") +  # Use facet_grid for better control
+  labs(
+    title = "Tobacco Use by Gender in Alabama and Alaska (2017-2019)",
+    x = "Year",
+    y = "Percentage of Users",
+    fill = "Gender"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 55, hjust = 1))  # Rotate year labels for better readability
+```
+6.How does the average tobacco use differ between Alabama and Alaska across the years 2011-2019? (the table grouped by state will show the overall tobacco use trends in Alabama and Alaska)
+```{r}
+summary_by_state <- Tob.Use %>%
+  group_by(state, topicdesc) %>%
+  summarise(
+    mean_usage = mean(data_value, na.rm = TRUE),
+    sd_usage = sd(data_value, na.rm = TRUE),
+    count = n()
+  )
+summary_by_state
+```
+
+7.Is there a significant difference in tobacco usage between males and females in Alabama and Alaska over time? (The gender summary table will highlight whether males or females are more likely to use tobacco products)
+```{r}
+summary_by_gender <- Tob.Use %>%
+  filter(gender != "Overall") %>%
+  group_by(state, gender, topicdesc) %>%
+  summarise(
+    mean_usage = mean(data_value, na.rm = TRUE),
+    sd_usage = sd(data_value, na.rm = TRUE),
+    count = n()
+  )
+summary_by_gender
+```
+8. compare the impact of e-cigarettes and traditional cigarette use in Alabama and Alaska from 2017 to 2019
+```{r}
+# Filter data for Alabama and Alaska from 2017-2019 and select e-cigarettes and traditional cigarette use
+filtered_data <- Tob.Use %>%
+    filter(year %in% c(2017, 2018, 2019),
+           state %in% c("AL", "AK"),
+           topicdesc %in% c("E-Cigarette Use (Adults)", "Cigarette Use (Adults)"))
+# Create line chart comparing e-cigarette and traditional cigarette use
+ggplot(filtered_data, aes(x = year, y = data_value, fill = topicdesc, group = topicdesc)) +
+  geom_area(position = 'stack', alpha = 0.5) +
+  facet_wrap(~ state) +
+  labs(title = "Impact of E-Cigarettes on Cigarette Use (2017-2019)",
+       x = "Year", y = "Percentage of Users", fill = "Tobacco Product") +
+  theme_minimal()
+```
